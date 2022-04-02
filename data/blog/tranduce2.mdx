@@ -1,0 +1,171 @@
+---
+title: Functional Programming – Transduce II
+date: '2021-10-17'
+tags: ['functional Programming']
+draft: false
+summary: Transduce 的進階概念
+authors: ['default']
+---
+
+<TOCInline toc={props.toc} asDisclosure />
+
+## Warn Up
+
+![jlongster.com](https://i.imgur.com/G92vQBS.png)
+
+[上一篇](https://ithelp.ithome.com.tw/articles/10269569)介紹了 transduce 基本概念後，就可以知道 transduce 就是對資料結構進行 transform 並 reduce，
+
+其核心概念只有三步
+
+1. **迭代(iterate)** Array 中的每一個值
+2. **轉換(transform)** 其值
+3. **建立(build)** 新的 Array。
+
+當然 transduce 不只能應用在 Array，接下來我們將介紹 transduce 如何應用在其他資料結構上 (ex: Object, Map, Immutable.js, ...)
+
+## Overview
+
+本篇會介紹以 transduce 為基底而延伸出的函式 into, sequence
+
+**_transduce_** :
+
+> 迭代給定的資料結構 (collection), 並將值透過 transform 函式進行轉換，最後執行 reducer function，reduce 到給定的 init value.
+
+```js
+const transduce = (transducer, reducer, initValue, collection) => {
+  /** TODO */
+}
+```
+
+**_into_**
+
+> 迭代給定的資料結構 (from), 並將值透過 transform 函式進行轉換，最後把值塞到給定的資料結構 `to`
+
+```js
+const into = (to, transducer, from) => {
+  /** TODO */
+}
+```
+
+**_sequence_**
+
+> 迭代給定的資料結構 (collection), 並將值透過 transform 函式進行轉換，建立一個與 collection 相同的資料結構，並進行塞入。
+
+```js
+const sequence = (transducer, collection) => {
+  /** TODO */
+}
+```
+
+可以看到不變的都是 **迭代，轉換最後再建立**，只是 **transduce** 像是最底層的函式，需要提供完整的資訊，而 **into** 則是透過給定的參數 (to)，自動判斷該型別對應的塞入函式，最後 **sequence** 則是更簡潔了，其會透過給定的 collection，自動建立一個相同的結構與塞入函式。
+
+## Rewrite Transduce
+
+上一篇我們實作 transduce，但那只能用在 Array 上，有沒有一個可以讓各種資料結構都可以使用的通用 transduce，沒錯，咱們就動手建立一個吧
+
+```js
+const transduce = (transducer, reducer, initValue, collection) => {
+  let acc = initValue
+
+  for (const val of collection) {
+    acc = transducer(reducer)(acc, val)
+  }
+
+  return acc
+}
+```
+
+在這邊要先提到 ES6 新增的協定 [iteration protocols](https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Iteration_protocols)，而只要是 String、Array、TypedArray、Map 以及 Set 這種可迭代內建物件，就可以套用在我們寫的通用 transduce。
+
+**_String_**
+
+例如，現在在給定字串中找出字元是母音，並要將其轉換成大寫，就可以用 `transduce`
+
+```js
+const toUpper = (str) => str.toUpperCase()
+const isVowel = (char) => ['a', 'e', 'i', 'o', 'u'].includes(char.toLowerCase())
+
+transduce(compose(map(toUpper), filter(isVowel)), (str, char) => str + char, '', 'JingHuangSu') // IUAU
+```
+
+**_Map_**
+
+當然 Map 也沒問題，就像先前的範例，每個數值乘三並且只保留偶數
+
+```js
+const tripleIt = (num) => num * 3
+const isEven = (num) => num % 2 === 0
+
+const numMap = new Map()
+numMap.set('a', 1)
+numMap.set('b', 2)
+numMap.set('c', 3)
+numMap.set('d', 4)
+
+transduce(
+  compose(map(tripleIt), filter(isEven)),
+  (acc, val) => (acc.push(val), acc),
+  [],
+  numMap.values()
+) // [6, 12]
+```
+
+**_Number (X)_**
+
+但由於 Number 是不可迭代（iterable）的，所以就沒有辦法。
+
+\*_compose, filter, map [前篇](https://ithelp.ithome.com.tw/articles/10269569)自寫之函式_
+
+## `into`
+
+接下來就讓我們嘗試看看實作出 `into`， 而 ramda 也有一樣的函式可供使用，在這裡就先 demo 概念
+
+由於要讓 Object 也可以進行迭代，故要先將 `transduce` 稍微改寫一下，
+
+```js
+const transduce = (transducer, reducer, initValue, _collection) => {
+  let acc = initValue
+
+  const collection = R.is(Object, _collection) ? R.toPairs(_collection) : _collection
+
+  for (const val of collection) {
+    acc = transducer(reducer)(acc, val)
+  }
+
+  return acc
+}
+```
+
+就像前面提到的 `into` 是基於 `transduce` 延伸的概念，所以基底不變，只需要再進行判斷其 init value 的型別，接下來就來打造出屬於自己的 `into` 的函式!
+
+```js
+const arrReducer = (acc, val) => (acc.push(val), acc)
+const objectReducer = (obj, value) => Object.assign(obj, value)
+
+const into = (to, transducer, from) => {
+  if (Array.isArray(to)) return transduce(transducer, arrReducer, to, collection)
+  else if (R.is(Object, to)) return transduce(transducer, objectReducer, to, collection)
+  throw new Error('into only supports arrays and objects as `to`')
+}
+
+into({}, compose(map((kv) => ({ [kv[0]]: kv[1].map(R.add(1)) }))), { a: [1, 2, 3], b: [2, 3, 4] }) // {a: [2, 3, 4], b: [3, 4, 5]}
+```
+
+## `sequence`
+
+sequence 則是更只需要輸入 transform 函式跟其要進行運算的資料結構就好!!
+
+```js
+const sequence = (transducer, collection) => {
+  if (Array.isArray(collection)) return transduce(transducer, arrReducer, [], collection)
+  else if (R.is(Object, collection)) return transduce(transducer, objectReducer, {}, collection)
+  throw new Error('unsupported collection type!!!')
+}
+
+sequence(compose(map((kv) => ({ [kv[0]]: kv[1].map(R.add(1)) }))), { a: [1, 2, 3], b: [2, 3, 4] }) // {a: [2, 3, 4], b: [3, 4, 5]}
+```
+
+## Reference
+
+1. [transduce tutorial](https://egghead.io/courses/quickly-transform-data-with-transducers)
+2. [圖片參照](https://archive.jlongster.com/Transducers.js--A-JavaScript-Library-for-Transformation-of-Data)

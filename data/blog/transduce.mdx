@@ -1,0 +1,401 @@
+---
+title: Functional Programming – Transduce I
+date: '2021-10-17'
+tags: ['functional Programming']
+draft: false
+summary: 如何 compose reducer 呢?
+authors: ['default']
+---
+
+<TOCInline toc={props.toc} asDisclosure />
+
+## 從一個簡單的問題開始
+
+假設我們目前有一組**長度為一百萬的陣列**，需要將陣列內的**每個數值乘三**並且**只保留偶數**，那我們會如何實作這簡單的問題?
+
+根據上面的問題，我們在實作前需要準備
+
+1. 長度為一百萬的陣列
+
+```js
+const makeArr = (randomCeil) => (len) =>
+  Array.from({ length: len }, (v, i) => Math.floor(Math.random() * randomCeil))
+
+const arrOfMillion = makeArr(100)(1e6)
+```
+
+2. 將每個數值乘三的函式
+
+```js
+const tripleIt = (num) => num * 3
+```
+
+3. 只保留偶數的函式
+
+```js
+const isEven = (num) => num % 2 === 0
+```
+
+接來開始想實作方式吧!
+
+---
+
+## 在不認識 Transduce 以前
+
+在我還不認識 Transduce 這個概念前，馬上想到的方法可能就是用
+
+1 `Array.prototype.map` 與 `Array.prototype.filter`
+
+```js
+// code.1
+
+const result = arrOfMillion.map(tripleIt).filter(isEven)
+```
+
+2 或是 `forEach`
+
+```js
+// code.2
+
+const result = []
+
+arrOfMillion.forEach((item) => {
+  const tripleItem = tripleIt(item)
+
+  if (isEven(tripleItem)) {
+    result.push(tripleItem)
+  }
+})
+```
+
+**雖然這兩種方法都可以解決問題，但各自都有優缺點:**
+
+1.  第一種方法
+
+    - 優點: **可讀性佳**。
+    - 缺點: **執行速度慢**。(由於會讓陣列跑了兩次迴圈。 `map`, `filter` 都會各跑一次，時間複雜度 O(2n)，用更直覺一點的想，**跑了兩次當然會拖慢程式的效能**。)
+
+2.  第二種方法
+
+    - 優點: **執行速度快**。(只需要跑一次迴圈)
+    - 缺點: **可讀性差，且不容易進行復用**。
+
+那有沒有一個解決方法是**可以擁有第一種方法的可讀性，且程式的執行速度跟第二種方式一樣快**!
+
+Tranduce 就是集結了兩方法優點的概念。 其是一個比較進階的概念，筆者也是理解與消化了許久才了解其中的奧秘，接下來我們就一步一步探索著個有趣的概念吧!
+
+---
+
+## 如何使用 Transduce
+
+與其先知道是如何實作，不如從如何使用開始，接下來使用的範例是使用 [Ramda](https://ramdajs.com/) 提供的 `tranduce` 函式去解決一開始提到的問題。
+
+Ramda 的 `transduce` 共需要放入四個參數
+
+1. `transducer`: compose 一個或多個 transformer 函式
+2. `reducer`: 為一個函式須傳入 accumulator 跟 currentValue， 並將 currentValue 累加到 accumulator 的運算函式。
+3. `initialValue`: 初始值。
+4. `data`: 想要進行處理的資料。
+
+```js
+// code.3
+
+const R = require('ramda')
+
+const transducer = R.compose(R.filter(isEven), R.map(tripleIt))
+
+const reducer = (acc, val) => (acc.push(val), acc) // same as (acc, val) => { acc.push(val); return acc }
+
+const result = R.transduce(transducer, reducer, [], arrOfMillion)
+```
+
+很清楚地可以看到，程式碼可讀性與第一種方法相差不遠。但如何去評測其是否也擁有第二種方法的效能?
+
+---
+
+## 效能評比
+
+簡易的效能工具
+
+```js
+const timer = (marked, fn) => {
+  console.time(marked)
+  fn()
+  console.timeEnd(marked)
+}
+```
+
+在來就是分別去比較，而比較的結果如下(秒數依電腦而異，但結論不會相差太遠)
+
+```js
+timer('first way - map & filter', () => {
+  /** run code.1 */
+})
+
+timer('second way - forEach', () => {
+  /** run code.2 */
+})
+
+timer('third way - transduce', () => {
+  /** run code.3 */
+})
+```
+
+#### 執行時間
+
+| category     | time(ms) | rank |
+| ------------ | :------: | ---: |
+| map & filter | 999.163  |    3 |
+| forEach      | 791.905  |    2 |
+| transduce    | 523.365  |    1 |
+
+#### 時間複雜度分析
+
+| category      | time complexity |
+| ------------- | :-------------: |
+| **transduce** |    **O(N)**     |
+| forEach       |      O(N)       |
+| map & filter  |      O(2N)      |
+
+大家應該已經發現，用 transduce 這個概念不但可以兼顧鏈式寫法的可讀性，也可以具有比 imperative (`forEach`) 寫法更好的效能，更不用說是本身就自帶 FP 的可複用性。
+
+---
+
+## Transduce 這個概念到底是如何實作的!!
+
+其實 Transduce 就是一個不斷抽象化的過程，而筆者整理出了其抽象化的四個步驟，但在解釋這四個步驟前，我們需要知道一些名詞
+
+### 名詞解釋
+
+1. **reducer** 為一個函式須傳入 accumulator 跟 currentValue， 並將 currentValue 累加到 accumulator 的運算函式。
+
+而 JS 任意的資料結構都可以組成相對應的 reducer，從 _字串_ 到 _物件_ 都有自己的 reducer 函式。
+
+```js
+const reducer = (acc, val) => acc + val
+
+// string
+reducer('Hello', ', World') // Hello, World
+
+// number
+reducer(5, 20) // 25
+
+// object
+const objectReducer = (acc, val) => ({ ...acc, ...val })
+
+const myInfo = {
+  name: 'Jing',
+  email: 'jingmultiplefive@gmail.com',
+}
+
+objectReducer({ ...myInfo }, { phone: '0912345678' }) // {name: "Jing", email: "jingmultiplefive@gmail.com", phone: "0912345678"}
+```
+
+而為什麼會被稱為 `reducer` 呢? 大家想想看 `Array.prototype.reduce`，所放入的第一個函式不就是 `(acc, val) => {/** do something, then concat*/ }` 嗎!!
+
+```js
+const arrReducer = (acc, val) => [...acc, val]
+
+;[2, 3, 4].reduce(arrReducer, [1]) // [1, 2, 3, 4]
+```
+
+2. **Transformer** 函式為傳入 `Array.prototype.map`，也就是將迴圈時傳入的值透過 transformer 去進行值的轉換。
+
+```js
+;[1, 2, 3, 4].map(tripleIt) // [3, 6, 9, 12]
+```
+
+`tripleIt` 這個就是 transformer，將其值進行三倍的轉換。
+
+3. **Predictor** 函式為傳入 `Array.prototype.filter`，在迴圈中篩選通過 predictor 函式的值。
+
+```js
+;[1, 2, 3, 4].filter(isEven) // [2, 4]
+```
+
+`isEven` 這個就是 predictor，篩選其為偶數的數值。
+
+### 步驟一，用 `reduce` 實踐 `map` 與 `filter`
+
+可以想像一下，如果現在 JS 語法已經不在支援， `map` 與 `filter` 也不能直接用 `forEach` 去實作，簡單來說就只能用 `Array.prototype.reduce`
+
+那要如何用 `reduce` 去實作 `map` 跟 `filter` 呢?
+
+```js
+const map = (transformer, array) => array.reduce((acc, val) => [...acc, transformer(val)], [])
+
+const filter = (predicator, array) =>
+  array.reduce((acc, val) => (predicator(val) ? [...acc, val] : acc))
+
+const result = filter(isEven, map(tripleIt, [1, 2, 3, 4]))
+```
+
+但這樣若想要進行多次的 `map` 或 `filter` 不就會變得難以閱讀， 如
+
+```js
+filter(isEven, map(tripleIt, filter(isEven, map(tripleIt, [1, 2, 3, 4]))))
+```
+
+這樣就沒辦法快速知道這段程式碼原來是將 array 各個 item 先乘 3 取偶數 再乘 3 再取偶數。
+
+> 有沒有甚麼方法可以先將 array 的語法抽象畫出來，並用 reduce 進行[鍊式](https://en.wikipedia.org/wiki/Method_chaining) 的寫法。
+
+接下來我們就要再抽象化，達到下例的寫法
+
+```js
+[1, 2, 3, 4]
+    .reduce((acc, val) => map(tripleIt)(acc, val), [])
+    .reducer(((acc, val) => filter(isEven)(acc, val), []); // [6, 12]
+```
+
+### 步驟二，將 Array 相關的語法 抽象化
+
+要進化成上述的寫法，就需要將 `map` 跟 `filter` 進行將 array 語法的抽象化，讓 `reduce` 本身用鏈式的方法去執行。
+
+```js
+const map = (transformer) => (acc, val) => [...acc, transformer(val)]
+
+const filter = (predicator) => (acc, val) => predicator(val) ? [...acc, val] : acc
+
+const result = [1, 2, 3, 4]
+  .reduce(map(tripleIt), []) // same as `(acc, val) => map(tripleIt)(acc, val)`
+  .reduce(filter(isEven), []) // same as `(acc, val) => filter(isEven)(acc, val)`
+```
+
+接下來大家應該都有注意到了， 第二步驟的 `map` 與 `filter` 好像都有相似之處，發現了嗎?
+
+`map` 函式的 `[...acc, transformer(val)]` 與 `filter` 函式的 `[...acc, val]` 這不就是 reducer 嘛!
+
+所以我們可以將其抽象出來，
+
+### 步驟三，將 Reducer 抽象化
+
+```js
+const map = (transformer) => (reducer) => (acc, val) => reducer(acc, transformer(val))
+
+const filter = (predicator) => (reducer) => (acc, val) => predicator(val) ? reducer(acc, val) : acc
+
+const reducer = (acc, val) => [...acc, val]
+```
+
+接下來我們就可以將我們的 `map` 與 `filter` 使用方法改寫成這樣
+
+```js
+const transducer = map(tripleIt)(filter(isEven)(reducer))
+
+const result = [1, 2, 3, 4].reduce(transducer, []) // [6, 12]
+```
+
+分析一下上述的函式
+
+首先 `reduce` 的 callback 觸發了 `(acc, val) => {/** your code */}`，進而啟動了 transducer 這個函式
+
+第一個 acc 跟 val 傳入 `reducer([], 1)`，先啟動了 `map`， 經過數值乘 3 後，輸出 `reducer([], 3)`
+
+接下來 `filter` 被啟動了，並且接收了 `reducer([], 3)`，作為其輸入，但 3 不是偶數，故 filter 回傳 `[]` 結束第一個數值的運算，之後以此類推。
+
+| step | val | tripleIt | isEven  |           acc |
+| ---- | :-: | :------: | :-----: | ------------: |
+| 1    |  1  |    3     | _false_ |          `[]` |
+| 2    |  2  |    6     | _true_  |         `[6]` |
+| 3    |  3  |    9     | _false_ |         `[6]` |
+| 4    |  4  |    12    | _true_  | **`[6, 12]`** |
+
+> 到這裡大家不難發現: <br/>
+>
+> Transducer 就是 reducer compose 起來的方法，也可以稱它為 higher-order reducer， 其需要將 reducer 傳入，且輸出另一個 reducer。
+
+如果還不是很清楚的，可以透過這個好用的[視覺化網站](http://pythontutor.com/visualize.html#code=const%20tripleIt%20%3D%20%28num%29%20%3D%3E%20num%20*%203%3B%0A%0Aconst%20isEven%20%3D%20%28num%29%20%3D%3E%20num%20%25%202%20%3D%3D%3D%200%3B%0A%0Aconst%20map%20%3D%20%28transformer%29%20%3D%3E%20%28reducer%29%20%3D%3E%20%28acc,%20val%29%20%3D%3E%0A%20%20reducer%28acc,%20transformer%28val%29%29%3B%0A%0Aconst%20filter%20%3D%20%28predicator%29%20%3D%3E%20%28reducer%29%20%3D%3E%20%28acc,%20val%29%20%3D%3E%0A%20%20predicator%28val%29%20%3F%20reducer%28acc,%20val%29%20%3A%20acc%3B%0A%0Aconst%20reducer%20%3D%20%28acc,%20val%29%20%3D%3E%20%5B...acc,%20val%5D%3B%0A%0Aconst%20transducer%20%3D%20map%28tripleIt%29%28filter%28isEven%29%28reducer%29%29%3B%0A%0Alet%20result%20%3D%20%5B1,%202,%203,%204%5D.reduce%28transducer,%20%5B%5D%29&cumulative=false&heapPrimitives=nevernest&mode=edit&origin=opt-frontend.js&py=js&rawInputLstJSON=%5B%5D&textReferences=false)，更清晰的理解過程。
+
+### 步驟四，打造 composable 的 Reducer
+
+相信到這裡大家應該都已經非常清楚地知道 transducer 整個運作流程，但還差臨門一腳
+
+```js
+const transducer = map(tripleIt)(filter(isEven)(reducer))
+```
+
+這段程式碼好像可以進行 compose，我們先將這段程式碼整理一下
+
+```js
+const tripleMapper = map(tripleIt)
+const isEvenFilter = filter(isEven)
+
+const transducer = tripleMapper(isEvenFilter(reducer))
+```
+
+而 compose 不就是將 `f2(f1(x))` 轉換成 `compose(f2, f1)(x)` 的概念嗎!
+
+```js
+const compose = (...functions) =>
+  functions.reduce(
+    (acc, fn) =>
+      (...args) =>
+        acc(fn(...args)),
+    (x) => x
+  )
+
+const transducer = compose(isEvenFilter, tripleMapper)
+
+const result = [1, 2, 3, 4].reduce(transducer(reducer), []) // [6, 12]
+```
+
+再將其轉換成需要傳入 `transducer`, `reducer`, `initialValue` 與 `array` 的函式
+
+```js
+const transduce = (transducer, reducer, initialValue, array) =>
+  array.reduce(transducer(reducer), initialValue)
+```
+
+---
+
+## 結論
+
+終於大功告成了，看起來我們可以對比一下使用 Ramda 的 `transduce` 跟我們目前寫的樣子
+
+1. Ramda 的 transduce
+
+```js
+// code.3
+
+const R = require('ramda')
+
+const transducer = R.compose(R.filter(isEven), R.map(tripleIt))
+
+const reducer = (acc, val) => (acc.push(val), acc) // same as (acc, val) => { acc.push(val); return acc }
+
+const result = R.transduce(transducer, reducer, [], arrOfMillion)
+```
+
+2. 我們的 transduce
+
+```js
+const compose = (...fns) =>
+  fns.reduce(
+    (acc, fn) =>
+      (...args) =>
+        acc(fn(...args)),
+    (x) => x
+  )
+
+const map = (transformer) => (reducer) => (acc, val) => reducer(acc, transformer(val))
+
+const filter = (predicator) => (reducer) => (acc, val) => predicator(val) ? reducer(acc, val) : acc
+
+const transduce = (transducer, reducer, initialValue, array) =>
+  array.reduce(transducer(reducer), initialValue)
+
+const transducer = compose(filter(isEven), map(tripleIt))
+
+const reducer = (acc, val) => (acc.push(val), acc)
+
+const result = transduce(transducer, reducer, [], arrOfMillion)
+```
+
+看起來是成功的復刻了 Ramda 的 transduce 函式，這也讓我們體會到了 transduce 就是不斷的抽象化的一個過程的概念，並且濃縮到兼顧可讀性與複用。
+
+## Reference
+
+- [Transducing](https://github.com/getify/Functional-Light-JS/blob/master/manuscript/apA.md/#appendix-a-transducing)
+- [Transducer Explained](https://simplectic.com/blog/2014/transducers-explained-1/)
+- [MAGICAL, MYSTICAL JAVASCRIPT TRANSDUCERS](https://jrsinclair.com/articles/2019/magical-mystical-js-transducers/)

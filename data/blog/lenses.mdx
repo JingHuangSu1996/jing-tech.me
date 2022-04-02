@@ -1,0 +1,252 @@
+---
+title: Functional Programming – Lenses
+date: '2021-10-18'
+tags: ['functional Programming']
+draft: false
+summary: 用最漂亮的方法操作資料結構
+authors: ['default']
+---
+
+<TOCInline toc={props.toc} asDisclosure />
+
+## 從兩個簡單的問題開始
+
+```js
+const user = {
+  id: 0,
+  name: 'JingMultipleFive',
+  username: 'jing.tech',
+  email: 'jing.tech.tw@gmail.com',
+  address: {
+    street: 'Wall',
+    suite: 'Abc 123',
+    city: ['Taipei', 'Subic', 'New York'],
+    zipcode: '242',
+    geo: {
+      lat: '-43.9509',
+      lng: '-34.4618',
+    },
+  },
+}
+```
+
+假設目前有一個需求，其為對上列的資料結構進行
+
+1. **修改**: 將使用者居住城市中的第一筆資料改成大寫
+2. **讀取**: 讀取該值
+
+根據上面的問題，我們在實作前需要
+
+**_將字串轉大寫的函式_**
+
+```js
+const toUpper = (str) => str.toUpperCase()
+```
+
+讀者們可以用五分鐘想想實作方式!
+
+## 在不認識 Lenses 以前
+
+在筆者還不認識 Lenses 這個概念前，馬上想到的方法就是 shallow copy，直接深入資料結構，瞄準目標，大鬧一番!!!!!!
+
+首先我們先進行第一個需求 **修改**
+
+```js
+// 將使用者居住城市中的第一筆資料改成大寫
+const modified_user = {
+  ...user,
+  address: {
+    ...user.address,
+    city: [toUpper(user.address.city.slice(0, 1)[0]), ...user.address.city.slice(1)],
+  },
+}
+```
+
+然後 **讀取** 該值
+
+```js
+// 取出該值
+modified_user.address.city[0] // TAIPEI
+```
+
+那我們來分析一下，上面的兩個行為 **讀取** 以及 **修改**，
+
+- **讀取** 看似沒有什麼問題，**但它不會有 Error Handle，想想今天不知道什麼原因，開發者因為胖手指在 address 後面多打了一個 s，則整個的程式就爆了**
+
+```js
+modified_user.addresss.city[0]
+// Uncaught TypeError: Cannot read properties of undefined (reading 'city')
+```
+
+- **修改** 修改就更彆扭了，如果今天是對資料結構進行更深層的修改，不斷的進行 shallow copy 只會讓程式在閱讀上更加困難。
+
+## 那用前幾天學到的 compose 呢?
+
+有些讀者可能會想，那用前幾天提到的 [function composition](https://ithelp.ithome.com.tw/articles/10265436) 呢?
+
+```js
+R.compose(R.toUpper, R.path(['address', 'city', 0]))
+```
+
+這個作法只能將目標值取出，並修改，但並不會放回原本的資料結構內!
+
+## Lenses 是什麼?
+
+> Lenses 是 FP 的工具之一，讓開發者可以在複雜的資料結構中，對特定的子結構 (subpart) 進行 讀取 / 寫入 / 修改，其他更進階的概念像是 Folds 跟 Traversals. 在之後的文章可能會提到。
+
+## 如何使用 Lenses
+
+> Lenses 需傳入兩種 method, getter 以及 setter!
+
+以下筆者將使用 Ramda 來 demo 這個概念
+
+首先我們先使用 Ramda `R.lens`，解決上面的問題
+
+### Step01. 用最陽春的 `R.lens`
+
+**_R.lens(getter, setter)_**
+
+getter: 取得目標資料。
+setter: 寫入目標資料，注意 setter 不能 mutate 原有的資料結構。
+
+```js
+const R = require('ramda')
+
+const getFirstCity = (data) => data.address.city[0]
+const setFirstCity = (value, data) => ({
+  ...user,
+  address: {
+    ...user.address,
+    city: [value, ...user.address.city.slice(1)],
+  },
+})
+
+const firstCityLens = R.lens(getFirstCity, setFirstCity)
+```
+
+在先前我們提到 Lenses 可以對資料結構中特定的子結構 (subpart) 進行 **讀取/寫入/修改**。
+
+而 Ramda 對應的操作函式為
+
+- 讀取: `R.view(lens, dataStructure)`
+- 寫入: `R.set(lens, updateValue, dataStructure) `
+- 修改: `R.over(lens, updateFunction, dataStructure)`
+
+```js
+// 取出該值
+R.view(firstCityLens, user)
+
+// 用 R.set, 將使用者居住城市中的第一筆資料改成大寫
+R.set(firstCityLens, R.toUpper(R.view(firstCityLens, user)), user)
+
+// 用 R.over, 將使用者居住城市中的第一筆資料改成大寫
+R.over(firstCityLens, R.toUpper, user)
+```
+
+好的，...想必現在各位讀者應該都心想 "So...What..., 怎麼這麼複雜，也沒多乾淨嘛!"。
+
+修但幾咧，這只是 demo 最陽春的 lens 如何使用，竟然都使用 Ramda 了，其他函式當然也要給它用好用滿。
+
+### Step02. 將 getter 以及 setter 改寫
+
+Ramda 也有提供相關的函式，去定位目標資料，如圖
+
+![Imgur](https://i.imgur.com/Nuv2UA1.png)
+
+| 資料結構 | getter | setter      |
+| -------- | ------ | ----------- |
+| 單層     | R.prop | R.assoc     |
+| 多層     | R.path | R.assocPath |
+
+而目前我們要定位的 city 是在資料結構的深層，所以我們需要使用 `R.path` 以及 `R.assocPath` 作為 lens 的 getter 與 setter!
+
+```js
+const getFirstCity = R.path(['address', 'city', 0])
+const setFirstCity = R.assocPath(['address', 'city', 0])
+
+const lensCity = R.lens(getFirstCity, setFirstCity)
+
+// 取出該值
+R.view(lensCity, user)
+
+// 將使用者居住城市中的第一筆資料改成大寫
+R.over(lensCity, R.toUpper, user)
+```
+
+### Step03 用 `R.lensPath` 再改寫一次
+
+可以看到 `R.path` 跟 `R.assocPath` 所放入的參數都是 `['address', 'city', 0]`，Ramda 內有提供 `R.lensPath` 去簡化此寫法。
+
+> `R.lensPath(<prop>)` 只是 `R.lens(R.path(<prop>), R.assocPath(<prop>))` 的簡寫。
+
+```js
+const lensCity = R.lensPath(['address', 'city', 0])
+
+// 取出該值
+R.view(lensCity, user)
+
+// 將使用者居住城市中的第一筆資料改成大寫
+R.over(lensCity, R.toUpper, user)
+```
+
+Isn't that neat!?
+
+**_重點是 `R.over` 與 `R.set` 返回的值是 immutable 的，也就是不會去動到原有的資料結構!_**
+
+## Lenses 的三個特性
+
+Lenses 必定符合下列三個特性
+
+**1. set after get**
+`view(lens, set(lens, a, store)) ≡ a`
+**寫入** 一個值到資料結構中，然後立即 **讀取** 該目標值，則會得到剛 **寫入** 的值。
+
+**2. set after set**
+`set(lens, b, set(lens, a, store)) ≡ set(lens, b, store)`
+**寫入** 一個值到資料結構中，然後立即重複 **寫入** 值到該目標結構中，則會得到剛 **寫入** 的值，也就是 b。
+
+**3. get after set**
+`set(lens, view(lens, store), store) ≡ store`
+當你 **讀取** 資料結構中的目標值，然後立即 **寫入** 值到該目標結構中，資料結構不變。
+
+## Composition
+
+Lenses 就是一般的函式，而想到函式代表我們可以進行 composition!
+
+唯一不同的是它們執行順序是從左到右邊 (而非先前所學的右到左)，明天介紹的 transduce 也是從左到右邊!
+
+```js
+const address = lensProp('address')
+const city = lensProp('city')
+const head = lensIndex(0)
+
+const lensCity = compose(address, city, head)
+
+// 將使用者居住城市中的第一筆資料改成大寫
+R.over(lensCity, R.toUpper, user)
+
+// 取出該值
+R.view(lensCity, user)
+```
+
+## 小結
+
+其實單就操作資料結構，Lenses 只是其中一個方法，還有其他原生的 Web API 像是 proxy 或是三方套件像是 immer，又或是可以期待未來的 [JS 新 feature Record](https://github.com/tc39/proposal-record-tuple)，它們使用起來或許對於非函數式編程者會更友善，但 Lenses 不只提供 Functional 的方法操作資料結構，還有 Fold 跟 Traversables 之後也會一併討論到。
+
+**_Immer 範例_**
+
+```js
+import produce from 'immer'
+
+const modified_user = produce(user, (draft) => {
+  draft.address.city[0] = toUpper(draft.address.city[0])
+})
+
+// 取出該值
+modified_user.address.city[0] // TAIPEI
+```
+
+## Reference
+
+- [Functioanl Lenses in JavaScript](https://www.linkedin.com/pulse/functional-lenses-javascript-vladim%C3%ADr-gorej/)
+- [Lenses with Immutable.js](https://medium.com/@drboolean/lenses-with-immutable-js-9bda85674780)

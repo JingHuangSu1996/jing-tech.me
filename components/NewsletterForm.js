@@ -2,11 +2,17 @@ import { useRef, useState } from 'react'
 
 import siteMetadata from '@/data/siteMetadata'
 
+const OPEN_TOGGLE = false
+
 const NewsletterForm = ({ title = 'Subscribe to the newsletter' }) => {
   const inputEl = useRef(null)
   const [error, setError] = useState(false)
   const [message, setMessage] = useState('')
   const [subscribed, setSubscribed] = useState(false)
+
+  if (!OPEN_TOGGLE) {
+    return null
+  }
 
   const subscribe = async (e) => {
     e.preventDefault()
