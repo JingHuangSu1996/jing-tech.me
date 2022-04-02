@@ -9,7 +9,7 @@ const siteMetadata = {
   siteRepo: 'https://github.com/JingHuangSu1996/jing-tech.me',
   siteLogo: '/static/images/my_logo.png',
   image: '/static/images/avatar.png',
-  socialBanner: '/static/images/twitter-card.png',
+  socialBanner: '/static/images/jingbrand.png',
   email: 'jing.tech.tw@gmail.com',
   github: 'https://github.com/JingHuangSu1996/',
   twitter: 'https://twitter.com/Jing19794341',
