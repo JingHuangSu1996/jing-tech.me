@@ -1,0 +1,283 @@
+---
+title: Functional Programming – Function Composition
+date: '2021-10-14'
+tags: ['Functional Programming']
+draft: false
+summary: Functional Programming is all about composition.
+authors: ['default']
+---
+
+<TOCInline toc={props.toc} asDisclosure />
+
+## 為何麼需要 Function Composition?
+
+> 接下來會用故事的方式，來講解為什麼需要 compose.
+
+小明觀察近年健身風氣開始盛行，所以看準雞胸肉市場，決定開一家雞肉工廠。起初的想法只是請員工幫忙從一隻 **全雞上取出雞胸肉**，再進行 **口味調配** 與 **包裝**。
+
+首先需要一隻全雞!
+
+```js
+// 這是我的雞
+const WHOLE_CHICKEN = ['leg', 'wing', 'breast', 'buttock', 'breast strips', 'land', 'bug']
+```
+
+那從取出雞胸肉到包裝呢?
+
+```js
+// 全雞上取出雞胸肉
+const grab = curry((part, chicken) => chicken.find((p) => p === part))
+
+// 口味調配
+const addFlavor = curry((flavor, part) => `${flavor} ${part}`)
+
+// 包裝
+const wrapIt = curry((item) => `Wrapped(${item})`)
+```
+
+研擬好 SOP 後，小明雞胸肉舖 終於風光開幕拉，找了占地 400 平的工廠，將機器線路拉好，並請大量的地方叔叔跟阿姨當員工，而生產流程一開始是這樣的，
+
+![https://i.imgur.com/L4eJRQu.png](https://i.imgur.com/L4eJRQu.png)
+
+首先會有專門取雞胸肉的員工，取好雞胸肉後，走到醃製區交給醃製雞胸肉的員工，該員工醃製好後，在走到包裝區交給包裝員工進行包裝。
+
+_程式實踐版:_
+
+```js
+const grabBreast = grab('breast', WHOLE_CHICKEN)
+
+const addItalianHerbalFlavor = addFlavor('italianHerbal', grabBreast)
+
+const product = wrapIt(addItalianHerbalFlavor)
+```
+
+一開始這個流程看似並沒有問題，生意穩地的成長，並且在社群媒體流傳了 **吃雞胸肉找小明** 的優良風評。但好日子不長久，因為網路名人 "巨石貝多芬" 看到這個地段生意如此火熱，決定也在這裡開一家雞胸肉鋪，並且日產量是 小明雞胸肉鋪 的三倍，且更便宜。
+
+看到生意開始衰退的小明大驚失色，開始與自家員工思考生產流程有沒有可以優化的，而已經熟悉整個生產流程的地方叔叔與阿姨們點出當前製作流程的缺點。
+
+**"他們點出在製作過程中需要跨區移動，這過程太冗長了。其實可以把這整個製作流程串連在一起。"**
+
+所以小明決定聽從建議，將生產流程串連再一起，這樣員工就節省了移動時間
+
+_程式實踐版:_
+
+```js
+const product = wrapIt(addFlavor('italianHerbal', grab('breast', WHOLE_CHICKEN)))
+```
+
+![https://i.imgur.com/i9sBchS.png](https://i.imgur.com/i9sBchS.png)
+
+經過這次產品優化後，小明雞胸肉鋪 又回歸到之前門庭若市的狀態，但商場就像是愛情一樣，總是變化多端。"巨石貝多芬" 開始賣起了各種口味的雞胸肉，此舉又將所有客人吸引過去。
+
+小明知道此事後，決定將流程自動化，並且聘請機器製造專家，幫忙設計能製造不同口味的機器， 而此機器專家靈光一閃，想要製造一台可以製造機器的機器，經過日以繼夜的研發，終於完成世紀之作，
+
+_程式實踐版:_
+
+```js
+const compose = (z, g, f) => (x) => z(g(f(x)))
+
+const makeItalianHerbalBreast = compose(wrapIt, addFlavor('italianHerbal'), grab('breast'))
+
+const makeBlackPepperBreast = compose(wrapIt, addFlavor('blackPepper'), grab('breast'))
+
+makeItalianHerbalBreast(WHOLE_CHICKEN)
+makeBlackPepperBreast(WHOLE_CHICKEN)
+```
+
+## 什麼是 Function Composition?
+
+### 定義
+
+> compose 就是將多個函式組合成另一個新函式。
+
+```js
+const compose = (z, g, f) => (x) => z(g(f(x)))
+```
+
+可以看到上面的例子，我們把 `wrapIt`, `addFlavor` 跟 `grab` 這些功能單一的函式組合成一個更強大的函式。
+
+### 一些小重點
+
+- **執行順序**:
+
+compose 的執行方式是 從右到左，也就是在閱讀 compose 時，從左到右，如同下面範例，
+
+1. 先取雞胸肉 (`grab('breast')`)
+2. 用義大利香草醃製雞胸肉 (`addFlavor('italianHerbal')`)
+3. 進行包裝 (`wrapIt`)
+
+```js
+const makeItalianHerbalBreast = compose(wrapIt, addFlavor('italianHerbal'), grab('breast'))
+```
+
+示意圖:
+
+```js
+compose(z, g, f)(d)
+
+// <-- z(g(f(d))) -- g(f(d)) -- f(d) --- d
+```
+
+- **型別限制**:
+
+上一個函數輸出值的型別 一定要等於 下一個函數輸入值的型別。
+
+也就是 `d` 要與 `f` 函式輸入相同型別, 而其輸出值 `f(d)` 要與 `g` 函式輸入相同型別。
+
+- **結合律**:
+
+```js
+compose(f, compose(g, h)) === compose(compose(f, g), h)
+```
+
+- **Declarative**:
+
+將函式進行 Compose 後，會更清楚知道程式做了什麼，不用管資料在每個階段是什麼狀態。 如同接水管一樣，只要知道起點跟終點的位置，用水管串連起來，當水注入水管時，只要在終點看水有沒有跑出來就好了，不用去管中間發生了什麼。
+
+## 實作出通用的 Compose
+
+實作部分主要是讓讀著們可以理解概念，在開發時還是以 production ready 的 library 為主，像是 Ramda, lodash 等
+
+```js
+const compose = (...fns) =>
+  fns.reduce(
+    (acc, fn) =>
+      (...args) =>
+        acc(fn(...args)),
+    (x) => x
+  )
+```
+
+## Debugging
+
+在進行 compose 的時候，不免會有遇到錯誤的情況，在這邊也介紹在如何進行 debug.
+
+compose 因為是將多個功能單一的函式拼湊出一個複雜的函式，但想要檢視當資料經過各個函式後的結果，則是可以運用 `log` 這個函式去達成。為了省去空間，將用 [comma opeator](https://developer.mozilla.org/zh-TW/docs/Web/JavaScript/Reference/Operators/Comma_Operator#processing_and_then_returning) 去表示 `log`.
+
+```js
+const log = (pos) => (x) => (console.log(pos, x), x)
+```
+
+在這裡將上面提到的範例，進行追蹤
+
+```js
+const makeItalianHerbalBreast = compose(
+  log('4'),
+  wrapIt,
+  log('3'),
+  addFlavor('italianHerbal'),
+  log('2'),
+  grab('breast'),
+  log('1')
+)(WHOLE_CHICKEN)
+
+// 1 [ 'leg', 'wing', 'breast', 'buttock', 'breast strips', 'land', 'bug' ]
+// 2 breast
+// 3 italianHerbal breast
+// 4 Wrapped(italianHerbal breast
+```
+
+相較於之前的寫法，我們現在加入 `log` 去追蹤每個函式執行後的結果。
+
+這樣在 debug 或是 理解函式時會非常有用，可以精準定位，並進行修復或探討。
+
+## Pipe
+
+`pipe` 其實就跟 `compose` 的概念一樣，只是執行的順序不一樣，其順序是 **從右到左**。
+
+```js
+pipe(z, g, f)(d)
+
+// d ----- z(d) -- g(z(d)) -- f(g(z(d))) --->
+```
+
+以我們上面的範例，若用 `pipe` 去改寫就會變成這樣
+
+```js
+const makeItalianHerbalBreast = pipe(grab('breast'), addFlavor('italianHerbal'), wrapIt)
+
+makeItalianHerbalBreast(WHOLE_CHICKEN)
+```
+
+## So What...?
+
+還記得昨天 PM 跟工程師討論的需求嗎?
+
+今日的 So What 主題與就是延續昨日的需求，在上一篇我們最後將 Curry 概念實踐在程式碼上，讓我們把記憶拉回到昨天最後寫出來的程式碼
+
+```js
+// util.js
+
+// sort
+const sort = curry((fn, data) => [...data].sort(fn))
+// get
+const get = curry((key, data) => data[key])
+// concat
+const concat = curry((symbol, data) => data.concat(symbol))
+// map
+const map = curry((transformer, data) => data.map(transformer))
+```
+
+```js
+fetch('https://jsonplaceholder.typicode.com/users')
+  .then((r) => r.json())
+  .then(sort((a, b) => b.address.geo.lat - a.address.geo.lat))
+  .then(map(get('username')))
+  .then(map(concat('!')))
+  .then(console.log)
+  .catch(console.error)
+```
+
+那我們打鐵趁熱，現學現賣一下，給大家一點時間，用 Compose 概念重構一下上面的程式碼。(答案下面揭曉)
+
+首先，因為筆者的個人偏好，先將排序那段程式包成函式
+
+```js
+const sortLatitude = sort((a, b) => b.address.geo.lat - a.address.geo.lat)
+```
+
+接下來用 `compose` 將改寫
+
+```js
+// index.js
+const responseHandler = compose(map(concat('!')), map(get('username')), sortLatitude)
+
+fetch('https://jsonplaceholder.typicode.com/users')
+  .then((r) => r.json())
+  .then(responseHandler)
+  .then(console.log)
+  .catch(console.error)
+```
+
+有感受到了嘛!!! Isn't that neat!!??
+
+接下來還可以在一個地方進行優化，或許各位讀者都發現了，
+
+```js
+compose(..., map(concat(!)), map(get('username')), ...)
+    ===
+compose(..., map(compose(concat(!), get('username'))), ...)
+```
+
+等式右邊的寫法不但更簡潔，也更有效率。所以重構的最終版本終於出來了!
+
+```js
+// index.js
+const responseHandler = compose(map(compose(concat('!'), get('username'))), sortLatitude)
+
+fetch('https://jsonplaceholder.typicode.com/users')
+  .then((r) => r.json())
+  .then(responseHandler)
+  .then(console.log)
+  .catch(console.error)
+```
+
+透過不斷的抽象化，可以很清楚地知道整個資料處理邏輯!!! 真的是太棒了，希望讀者們也有跟筆者一樣的感受!!!
+
+> 每塊樂高積木雖然只有單一形狀，但卻可以組出一個複雜的模型。"
+>
+> 而 Function Composition 就像是將函式當成樂高，雖然每個函式都只有一個職責，但卻可以創造出屬於自己的程式 (program)，這個概念是 Functional Programming 的核心!
+
+## 參考資源
+
+[Functional-Light-JS Ch.4](https://github.com/getify/Functional-Light-JS/blob/master/manuscript/ch3.md/)

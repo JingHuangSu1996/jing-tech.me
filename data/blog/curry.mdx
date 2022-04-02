@@ -1,0 +1,250 @@
+---
+title: Functional Programming – Curry
+date: '2021-10-15'
+tags: ['Functional Programming']
+draft: false
+summary: 今晚我想來點...Curry!
+authors: ['default']
+---
+
+<TOCInline toc={props.toc} asDisclosure />
+
+## Curry 的功用?
+
+我們先來看一個簡單的函式 `add`
+
+```js
+const add = (x, y) => x + y
+```
+
+這應該就是大家所熟悉一般函式的寫法，當我們進行兩數相加時，只需要放入函式所需的參數，即可進行呼叫。
+
+```js
+add(1, 1) // 2
+```
+
+簡單吧! 看起來沒有什麼好挑剔的，那如果多放或少放參數呢?
+
+```js
+add(1) // NaN
+
+add(1, 1, 'Naurrr') // 2
+```
+
+多放參數也不是不行，只是會被忽視。 少放的話則會發生問題，變成 `1+undefined`，則為 `NaN`.
+
+## Curry 是什麼呢?
+
+可以看到上面的範例，如果少放參數，函式也會立即被呼叫，且少放的參數全部會變成 `undefined`, 那要怎麼讓函式收到全部參數再呼叫呢?
+
+> 相較於一般函式寫法不同，Currying 這個概念在於將原本預期是要傳入多個參數的函式 轉化成 每次只接收一個參數作為輸入，並回傳新的函式，且等待下一個參數傳入，直到函式所需參數皆到齊時，才會呼叫。
+
+所以在 Currying 下的 `add` 函式寫法就會是
+
+```js
+const addC = (x) => (y) => x + y
+```
+
+這時 `addC` 需要這樣呼叫 `addC(1)(1)` ，好處就是我們可以不用一次放入全部參數，可以最大化函式的自由度，也就是說可以在任何時間與任何地點(不同檔案路徑) 呼叫 currying 的函式。
+
+舉個簡單的例子:
+
+```js
+// utils.js
+export const add1 = addC(1)
+
+// example.js
+import { add1 } from './utils'
+
+;[1, 2, 3, 4, 5].map(add1) // [2, 3, 4, 5, 6]
+```
+
+我們在 `utils.js` 寫了一個 `add1` 的函式，並在 `example.js` 引用，這樣寫大大地增加了寫程式的自由度，以及複用性。
+
+## 實作 Curry
+
+既然知道 currying 這個概念了，直接來實作一個可以將各種函式 currying 的通用函式。
+
+```js
+function curry(fn, arity = fn.length) {
+  return (function nextCurried(prevArgs) {
+    return function curried(nextArgs) {
+      const args = [...prevArgs, nextArgs]
+      if (args.length >= arity) {
+        return fn(...args)
+      }
+      return nextCurried(args)
+    }
+  })([])
+}
+```
+
+現在就來將原本的 `add` 透過 `curry` 變成有 currying 特性的 `add` 吧 !
+
+```js
+const add = (x, y) => x + y
+
+const addC = curry(add)
+
+addC(1)(1) //2
+```
+
+分析一下 curry 這個函式是怎麼將各種函數通用化的，舉 `add(x, y)` 來說，
+
+一開始 `curry(add)` 傳入時會馬上呼叫 `nextCurried` 並且 `prevArgs` 的初始值為 `[]`，
+
+當 `1` 被傳入時，此時 `args` 會變成 `[1]`，此時 `args.length` 還小於 `add` 傳入參數長度(2)， 所以會進行遞迴 `nextCurried([1])` 。
+
+當另一個 `1` 被傳入時，此時 `args` 會變成 `[1, 1]`，而 `args.length` 也是 `2`， 故收到所有參數的 `add`會立即執行，並回傳 `2`。
+
+## Loose curry
+
+或許大家會覺得 `add(1)(1)` 有點不方便，那有麼方法可以讓更有彈性的，不管寫成 `addC(1)(1)` 或是 `addC(1, 1)` 都可以執行。好消息是 ramda 或是 lodash/fp 的 `curry` 函式皆有支援，也有人稱此為 [loose curry](https://github.com/getify/Functional-Light-JS/blob/master/manuscript/ch3.md/#currying-more-than-one-argument)
+
+```js
+function looseCurry(fn, arity = fn.length) {
+  return (function nextCurried(prevArgs) {
+    return function curried(nextArgs) {
+      const args = [...prevArgs, ...nextArgs]
+      if (args.length >= artiy) {
+        return fn(...args)
+      }
+      return nextCurried(args)
+    }
+  })([])
+}
+
+const add = (x, y) => x + y
+
+const addC = looseCurry(add)
+```
+
+這樣我們就可以同時使用 `addC(1)(1)` 與 `addC(1, 1)` 的寫法了!
+
+## So What...?
+
+看完上面的例子，看不太出來 curry 的好處，心想 so what...? 的讀者們，接下筆者來會用實際範例來呈現 curry 的威力!
+
+想像一下，現在 PM 要你處理這支 [Users API](https://jsonplaceholder.typicode.com/users)，需求是
+
+1. 對使用者居住的緯度由高到低進行排序，
+2. 取出使用者的名字，
+3. 在每位使用者名子後面加 "!"。
+
+所需要的函式會有
+
+```js
+// sort
+const sort = (fn, data) => [...data].sort(fn)
+
+// get
+const get = (key, data) => data[key]
+
+// concat
+const concat = (symbol, data) => data.concat(symbol)
+
+// map
+const map = (transformer, data) => data.map(transformer)
+```
+
+> 重點一: 可以看到上面的都有一個共通點，就是 Data Last，這也是 ramda 或是 lodash/fp 的特色，將"需要處理的資料"放在函式的最後一個。晚點也會提到這樣有什好處。
+
+由於函式沒有進行 currying 之前，函式需要一次傳入其所需之參數
+
+```js
+fetch('https://jsonplaceholder.typicode.com/users')
+  .then((r) => r.json())
+  .then((data) => sort((a, b) => b.address.geo.lat - a.address.geo.lat, data))
+  .then((sortedData) => map((data) => get('username', data), sortedData))
+  .then((usernames) => map((username) => concat('!', username), usernames))
+  .then((result) => console.log(result))
+  .catch((err) => console.error(err))
+```
+
+接下來，讀者可以試著把所有函式進行 currying，並且重構上面的那段程式碼
+
+```js
+// sort
+const sort = curry((fn, data) => [...data].sort(fn))
+// get
+const get = curry((key, data) => data[key])
+// concat
+const concat = curry((symbol, data) => data.concat(symbol))
+// map
+const map = curry((transformer, data) => data.map(transformer))
+```
+
+```js
+fetch('https://jsonplaceholder.typicode.com/users')
+  .then((r) => r.json())
+  .then((xs) => sort((a, b) => b.address.geo.lat - a.address.geo.lat)(xs))
+  .then((xs) => map(get('username'))(xs))
+  .then((xs) => map(concat('!'))(xs))
+  .then((result) => console.log(result))
+  .catch((err) => console.error(err))
+```
+
+可以看到跟上面的寫法看似沒有什麼差別，但是我們可以將寫法進一步改成
+
+```js
+fetch('https://jsonplaceholder.typicode.com/users')
+  ...
+  .then(sort((a, b) => b.address.geo.lat - a.address.geo.lat))
+  ...
+```
+
+而這種寫法又稱為 **point-free style**. 接下來用 **point-free style** 重構上面的那段程式碼
+
+發現了嗎! Isn't that neat!!??
+
+```js
+fetch('https://jsonplaceholder.typicode.com/users')
+  .then((r) => r.json())
+  .then(sort((a, b) => b.address.geo.lat - a.address.geo.lat))
+  .then(map(get('username')))
+  .then(map(concat('!')))
+  .then(console.log)
+  .catch(console.error)
+```
+
+由上面筆者整理一些重點
+
+**1. 易讀性增加**
+
+有些讀者們可能會認為，可以將所有 `.then` 要做的事，再抽出來變成一個函式，如下面範例
+
+```js
+const getNameFromSortedData = (sortedData) => map((data) => get('username', data), sortedData)
+```
+
+```js
+fetch('https://jsonplaceholder.typicode.com/users')
+   ...
+   .then(getNameFromSortedData)
+   ...
+```
+
+可以試想一下，**這樣不是就需要幫每個函式進行命名，然而命名不是一件容易的事情，面對不容易的事情，其中一個方法，就是不要去做這件事。**
+
+對! Currying 過後的函式，就已經可以清楚表明程式碼到底在幹嘛，就不太需要再包成一個函式，並且為函式命名。
+
+```js
+fetch('https://jsonplaceholder.typicode.com/users')
+    ...
+    .then(map(get('username')))
+    ...
+```
+
+**2. Data Last**
+
+其實這點是非常重要的，Data Last 就是將需要處理的資料作為函式的最後一個參數。
+
+`function(fn, data)`
+
+這樣寫有什麼好處呢?
+
+其可以最大化 currying 的效果! 再透過 point-free style 可以讓閱讀程式的人只需要專注於這段是處理了什麼邏輯!
+
+## Reference
+
+1. [Functional-Light-JS Ch.3](https://github.com/getify/Functional-Light-JS/blob/master/manuscript/ch3.md/)

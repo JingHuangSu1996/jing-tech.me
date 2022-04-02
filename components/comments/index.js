@@ -1,6 +1,8 @@
 import siteMetadata from '@/data/siteMetadata'
 import dynamic from 'next/dynamic'
 
+const OPEN_TOGGLE = false
+
 const UtterancesComponent = dynamic(
   () => {
     return import('@/components/comments/Utterances')
@@ -23,6 +25,11 @@ const DisqusComponent = dynamic(
 const Comments = ({ frontMatter }) => {
   let term
   const comment = siteMetadata?.comment
+
+  if (!OPEN_TOGGLE) {
+    return null
+  }
+
   if (!comment || Object.keys(comment).length === 0) return <></>
   switch (
     siteMetadata.comment.giscusConfig.mapping ||
@@ -40,15 +47,19 @@ const Comments = ({ frontMatter }) => {
   }
   return (
     <div id="comment">
-      {siteMetadata.comment && siteMetadata.comment.provider === 'giscus' && (
-        <GiscusComponent mapping={term} />
-      )}
-      {siteMetadata.comment && siteMetadata.comment.provider === 'utterances' && (
-        <UtterancesComponent issueTerm={term} />
-      )}
-      {siteMetadata.comment && siteMetadata.comment.provider === 'disqus' && (
-        <DisqusComponent frontMatter={frontMatter} />
-      )}
+      {OPEN_TOGGLE ? (
+        <>
+          {siteMetadata.comment && siteMetadata.comment.provider === 'giscus' && (
+            <GiscusComponent mapping={term} />
+          )}
+          {siteMetadata.comment && siteMetadata.comment.provider === 'utterances' && (
+            <UtterancesComponent issueTerm={term} />
+          )}
+          {siteMetadata.comment && siteMetadata.comment.provider === 'disqus' && (
+            <DisqusComponent frontMatter={frontMatter} />
+          )}
+        </>
+      ) : null}
     </div>
   )
 }
