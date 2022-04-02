@@ -58,6 +58,45 @@ module.exports = withBundleAnalyzer({
   eslint: {
     dirs: ['pages', 'components', 'lib', 'layouts', 'scripts'],
   },
+  async redirects() {
+    return [
+      {
+        source: '/2021_interview_learning',
+        destination: '/blog/2021_frontend_interview/',
+        permanent: true,
+      },
+      {
+        source: '/curry',
+        destination: '/blog/curry/',
+        permanent: true,
+      },
+      {
+        source: '/function-composition',
+        destination: '/blog/function-composition/',
+        permanent: true,
+      },
+      {
+        source: '/career-1',
+        destination: '/blog/career-1/',
+        permanent: true,
+      },
+      {
+        source: '/lenses',
+        destination: '/blog/lenses/',
+        permanent: true,
+      },
+      {
+        source: '/transduce',
+        destination: '/blog/transduce/',
+        permanent: true,
+      },
+      {
+        source: '/transduce-2',
+        destination: '/blog/transduce-2/',
+        permanent: true,
+      },
+    ]
+  },
   async headers() {
     return [
       {
