@@ -7,6 +7,7 @@ import Tag from '@/components/Tag'
 import siteMetadata from '@/data/siteMetadata'
 import Comments from '@/components/comments'
 import ScrollTopAndComment from '@/components/ScrollTopAndComment'
+import useWindowSize from '@/lib/hooks/useWindowSize'
 
 const editUrl = (fileName) => `${siteMetadata.siteRepo}/blob/master/data/blog/${fileName}`
 const discussUrl = (slug) =>
@@ -18,6 +19,7 @@ const postDateTemplate = { weekday: 'long', year: 'numeric', month: 'long', day:
 
 export default function PostLayout({ frontMatter, authorDetails, next, prev, children }) {
   const { slug, fileName, date, title, tags } = frontMatter
+  const { width } = useWindowSize()
 
   return (
     <SectionContainer>
@@ -95,6 +97,16 @@ export default function PostLayout({ frontMatter, authorDetails, next, prev, chi
                 <Link href={editUrl(fileName)}>{'View on GitHub'}</Link>
               </div>
               <Comments frontMatter={frontMatter} />
+              <div>
+                {/* // TODO: Dark Mode */}
+                <iframe
+                  scrolling="no"
+                  frameBorder="0"
+                  sandbox="allow-scripts allow-forms allow-popups allow-same-origin allow-popups-to-escape-sandbox allow-modals allow-presentation"
+                  style={{ height: width < 430 ? '140px' : '212px', width: '100%' }}
+                  src={siteMetadata.sponsor.likeCoin}
+                ></iframe>
+              </div>
             </div>
             <footer>
               <div className="divide-gray-200 text-sm font-medium leading-5 dark:divide-gray-700 xl:col-start-1 xl:row-start-2 xl:divide-y">

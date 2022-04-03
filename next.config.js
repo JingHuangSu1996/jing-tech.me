@@ -11,7 +11,7 @@ const ContentSecurityPolicy = `
   media-src 'none';
   connect-src * www.google-analytics.com vitals.vercel-insights.com www.googletagmanager.com; 
   font-src 'self';
-  frame-src giscus.app open.spotify.com;
+  frame-src giscus.app open.spotify.com button.like.co like.co;
 `
 
 const securityHeaders = [

@@ -50,7 +50,7 @@ const TOCInline = ({
   return (
     <>
       {asDisclosure ? (
-        <details open>
+        <details open={false}>
           <summary className="ml-6 pt-2 pb-2 text-xl font-bold">目錄</summary>
           <div className="ml-6">{tocList}</div>
         </details>

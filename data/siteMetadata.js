@@ -14,6 +14,10 @@ const siteMetadata = {
   github: 'https://github.com/JingHuangSu1996/',
   twitter: 'https://twitter.com/Jing19794341',
   linkedin: 'https://www.linkedin.com/in/jing-huang-su-76b525a2/',
+  sponsor: {
+    likeCoin:
+      'https://button.like.co/in/embed/jing1996/button?referrer="+encodeURIComponent(location.href.split("?")[0].split("#")[0])+"',
+  },
   locale: 'zh-hant',
   analytics: {
     // If you want to use an analytics provider you have to add it to the
