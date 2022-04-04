@@ -1,9 +1,9 @@
 import fs from 'fs'
-import PageTitle from '@/components/PageTitle'
 import generateRss from '@/lib/generate-rss'
 import { MDXLayoutRenderer } from '@/components/MDXComponents'
 import { formatSlug, getAllFilesFrontMatter, getFileBySlug, getFiles } from '@/lib/mdx'
-
+import { useTheme } from 'next-themes'
+import Image from 'next/image'
 const DEFAULT_LAYOUT = 'PostLayout'
 
 export async function getStaticPaths() {
@@ -42,6 +42,7 @@ export async function getStaticProps({ params }) {
 
 export default function Blog({ post, authorDetails, prev, next }) {
   const { mdxSource, toc, frontMatter } = post
+  const { theme } = useTheme()
 
   return (
     <>
@@ -57,12 +58,17 @@ export default function Blog({ post, authorDetails, prev, next }) {
         />
       ) : (
         <div className="mt-24 text-center">
-          <PageTitle>
-            Under Construction{' '}
-            <span role="img" aria-label="roadwork sign">
-              🚧
-            </span>
-          </PageTitle>
+          <div className="flex flex-col items-center justify-center md:mt-24 md:flex-col md:items-center md:justify-center ">
+            <Image
+              src={`/static/images/wip-${theme}.gif`}
+              height="250px"
+              width="250px"
+              alt="under construction"
+            />
+            <h4 className="text-xl font-extrabold leading-9 tracking-tight text-gray-900 dark:text-gray-100 md:px-6 md:text-xl md:leading-14">
+              施工中
+            </h4>
+          </div>
         </div>
       )}
     </>
