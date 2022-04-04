@@ -64,6 +64,7 @@ export default function Blog({ post, authorDetails, prev, next }) {
               height="250px"
               width="250px"
               alt="under construction"
+              priority={true}
             />
             <h4 className="text-xl font-extrabold leading-9 tracking-tight text-gray-900 dark:text-gray-100 md:px-6 md:text-xl md:leading-14">
               施工中
