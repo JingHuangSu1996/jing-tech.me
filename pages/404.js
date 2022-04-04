@@ -11,13 +11,7 @@ export default function FourZeroFour() {
   const { theme } = useTheme()
   return (
     <div className="flex flex-col items-center justify-center md:mt-24 md:flex-col md:items-center md:justify-center ">
-      <Image
-        src={`/static/images/404-${theme}.gif`}
-        alt="404"
-        width="250px"
-        height="250px"
-        priority={true}
-      />
+      <Image src={`/static/images/404-${theme}.gif`} alt="404" width="250px" height="250px" />
       <h5 className="text-3xl font-extrabold leading-9 tracking-tight text-gray-900 dark:text-gray-100 md:px-6 md:text-2xl md:leading-14">
         404
       </h5>
