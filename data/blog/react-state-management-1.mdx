@@ -1,5 +1,5 @@
 ---
-title: React 狀態管理 - I
+title: React 狀態管理 - State
 date: '2022-04-04'
 tags: ['react', 'state-management', 'frontend', '前端', '狀態管理']
 draft: true
@@ -8,6 +8,30 @@ authors: ['default']
 
 ## 前言
 
-## React - State
+## State
 
-## React - Context
+### React 中的 "State"
+
+#### 定義
+
+在 React 中 State 就是代表著 UI 的變化，任何 UI 改變的背後就意味著某個 State 的改變。而這也是 React 的核心，每當 State 改變就會觸發 React 的重新渲染機制。
+
+#### State 就像是快照
+
+剛剛在定義中，我們提到了 State 代表著 UI 的變化，接下來我們可以進一步想像 React 渲染的頁面就如同一幀影像，而 State 的改變就像是為影像換幀。
+
+#### 那 React 中的影像是如何形成的呢？
+
+這就不得不提到網頁的背後其實運用了很多 "樹狀結構" 的概念，就像是 DOM Tree 代表著 HTML 元素的排序。React 背後也有一個樹狀結構儲存每個元件以及其 State，這就是為什麼我們渲染頁面是透過 `ReactDOM.render(root, <App />`.
+
+#### ReactDOM 是透過什麼知道 State 有變動呢？
+
+而 React 提供的 `useState` API 就是一個觸發函式，我們可以透過它去改變 State.
+
+#### 綜上所述
+
+我們現在大概就知道了 ReactDOM 一開始透過根元件 `<App />` 建立一個 "樹狀結構" 將其渲染到網頁上，就變成我們看到的影像。而在這背後這個樹狀結構會監聽裡面 State 的是否有變化，如果裡面某個觸發 `useState` 則會讓 React 的重新渲染機制啟動，也就是換幀。
+
+## useState
+
+## Bail out
