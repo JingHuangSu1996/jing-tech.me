@@ -6,12 +6,14 @@ import CustomLink from './Link'
 import TOCInline from './TOCInline'
 import Pre from './Pre'
 import { BlogNewsletterForm } from './NewsletterForm'
+import CodeBlock from './MDX/CodeBlock'
 
 export const MDXComponents = {
   Image,
   TOCInline,
   a: CustomLink,
-  pre: Pre,
+  pre: (p) => <div {...p} />,
+  code: CodeBlock,
   BlogNewsletterForm: BlogNewsletterForm,
   wrapper: ({ components, layout, ...rest }) => {
     const Layout = require(`../layouts/${layout}`).default
