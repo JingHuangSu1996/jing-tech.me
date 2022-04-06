@@ -23,3 +23,23 @@ input:-webkit-autofill,
 input:-webkit-autofill:focus {
   transition: background-color 600000s 0s, color 600000s 0s;
 }
+
+a > code {
+  color: #087ea4 !important; /* blue-50 */
+  text-decoration: none !important;
+}
+
+html.dark a > code {
+  color: #149eca !important; /* blue-40 */
+}
+
+.code-step * {
+  color: black !important;
+}
+.code-step code {
+  background: none !important;
+  padding: 2px !important;
+}
+html.dark .code-step * {
+  color: white !important;
+}

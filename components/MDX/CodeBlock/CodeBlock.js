@@ -1,43 +1,99 @@
-import Pre from '@/components/Pre'
-import React from 'react'
-import {
-  Sandpack,
-  SandpackCodeViewer,
-  SandpackProvider,
-  SandpackThemeProvider,
-} from '@codesandbox/sandpack-react'
+// import Pre from '@/components/Pre';
 
-const CodeBlock = function CodeBlock(props) {
-  const { className = '', children, live } = props
+import { useState, useRef, useEffect } from 'react'
+import Highlight, { defaultProps } from 'prism-react-renderer'
+import vsDark from 'prism-react-renderer/themes/vsDark'
+import duotoneLight from 'prism-react-renderer/themes/duotoneLight'
+import { useTheme } from 'next-themes'
+
+// const getTheme = (color) => (color === 'dark' ? vsDark : duotoneLight);
+const CodeBlock = function CodeBlock({ children, className = 'language-js' }) {
+  // const { theme } = useTheme();
+
+  // e.g. "language-js"
   const language = className.substring(9)
-  const filename = '/index.' + language
-  let codeSnippets = React.Children.toArray(children)
-  console.log(live)
+  const textInput = useRef(null)
+  const [hovered, setHovered] = useState(false)
+  const [copied, setCopied] = useState(false)
 
-  if (live) {
-    return (
-      <div
-        translate="no"
-        className="bg-wash dark:bg-gray-95 flex h-full w-full items-center overflow-x-auto rounded-lg shadow-lg"
-      >
-        <SandpackProvider
-          customSetup={{
-            entry: filename,
-            files: {
-              [filename]: {
-                code: children?.toString(),
-              },
-            },
-          }}
-        >
-          <SandpackThemeProvider>
-            <SandpackCodeViewer key={String(children).trimEnd()} showLineNumbers={false} />
-          </SandpackThemeProvider>
-        </SandpackProvider>
-      </div>
-    )
+  const onEnter = () => {
+    setHovered(true)
   }
-  return <Pre {...props} />
+  const onExit = () => {
+    setHovered(false)
+    setCopied(false)
+  }
+  const onCopy = () => {
+    setCopied(true)
+    navigator.clipboard.writeText(textInput.current.textContent)
+
+    setTimeout(() => {
+      setCopied(false)
+    }, 2000)
+  }
+
+  return (
+    <div ref={textInput} onMouseEnter={onEnter} onMouseLeave={onExit} className="relative">
+      {hovered && (
+        <button
+          aria-label="Copy code"
+          type="button"
+          className={`absolute right-2 top-2 h-8 w-8 rounded border-2 bg-gray-700 p-1 dark:bg-gray-800 ${
+            copied
+              ? 'border-green-400 focus:border-green-400 focus:outline-none'
+              : 'border-gray-300'
+          }`}
+          onClick={onCopy}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            fill="none"
+            className={copied ? 'text-green-400' : 'text-gray-300'}
+          >
+            {copied ? (
+              <>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+                />
+              </>
+            ) : (
+              <>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                />
+              </>
+            )}
+          </svg>
+        </button>
+      )}
+      <Highlight {...defaultProps} theme={vsDark} code={children} language={language}>
+        {({ className, style, tokens, getLineProps, getTokenProps }) => (
+          <pre className={className} style={style}>
+            {tokens.map((line, i) => {
+              if (i === tokens.length - 1) {
+                return
+              }
+              return (
+                <div key={i} {...getLineProps({ line, key: i })}>
+                  {line.map((token, key) => (
+                    <span key={key} {...getTokenProps({ token, key })} />
+                  ))}
+                </div>
+              )
+            })}
+          </pre>
+        )}
+      </Highlight>
+    </div>
+  )
 }
 
 export default CodeBlock

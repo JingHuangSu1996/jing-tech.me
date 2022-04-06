@@ -1,7 +1,9 @@
+import Pre from '@/components/Pre'
 import { lazy, memo } from 'react'
+import InlineCode from '../InlineCode'
 import CodeBlock from './CodeBlock'
-// const CodeBlock = lazy(() => import('./CodeBlock'));
 
+// const CodeBlock = lazy(() => import('./CodeBlock'));
 const FallbackComponent = ({ children }) => {
   return (
     <pre className="bg-wash dark:bg-gray-95 flex h-full w-full items-center overflow-hidden overflow-x-auto rounded-lg text-[13.6px] leading-6 shadow-lg">
@@ -13,6 +15,9 @@ const FallbackComponent = ({ children }) => {
 }
 
 export default memo(function CodeBlockWrapper(props) {
+  if (!props?.className) {
+    return <InlineCode {...props}></InlineCode>
+  }
   return (
     // <Suspense fallback={<FallbackComponent>{children}</FallbackComponent>}>
     <CodeBlock {...props} />

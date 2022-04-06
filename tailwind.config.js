@@ -1,6 +1,6 @@
 const defaultTheme = require('tailwindcss/defaultTheme')
 const colors = require('tailwindcss/colors')
-
+const globalColors = require('./colors')
 module.exports = {
   experimental: {
     optimizeUniversalDefaults: true,
@@ -25,11 +25,16 @@ module.exports = {
         14: '3.5rem',
       },
       fontFamily: {
-        sans: ['InterVariable', ...defaultTheme.fontFamily.sans],
+        sans: ['Optimistic Display', '-apple-system', ...defaultTheme.fontFamily.sans],
+        mono: ['"Source Code Pro"', ...defaultTheme.fontFamily.mono],
       },
+      // colors: globalColors,
       colors: {
         primary: colors.teal,
         gray: colors.neutral,
+      },
+      fontSize: {
+        code: 'calc(1em - 20%)',
       },
       typography: (theme) => ({
         DEFAULT: {
@@ -128,10 +133,12 @@ module.exports = {
               color: theme('colors.gray.100'),
             },
             pre: {
-              backgroundColor: theme('colors.gray.800'),
+              // backgroundColor: theme('colors.gray.800'),
+              // backgroundColor: '#99a1b30f',
             },
             code: {
-              backgroundColor: theme('colors.gray.800'),
+              // 'code-block': '#99a1b30f'
+              backgroundColor: '#99a1b30f', // theme('colors.gray.800'),
             },
             details: {
               backgroundColor: theme('colors.gray.800'),

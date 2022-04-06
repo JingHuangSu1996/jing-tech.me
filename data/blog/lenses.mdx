@@ -197,16 +197,16 @@ Isn't that neat!?
 
 Lenses 必定符合下列三個特性
 
-**1. set after get**
-`view(lens, set(lens, a, store)) ≡ a`
+**1. set after get** `view(lens, set(lens, a, store)) ≡ a`
+
 **寫入** 一個值到資料結構中，然後立即 **讀取** 該目標值，則會得到剛 **寫入** 的值。
 
-**2. set after set**
-`set(lens, b, set(lens, a, store)) ≡ set(lens, b, store)`
+**2. set after set** `set(lens, b, set(lens, a, store)) ≡ set(lens, b, store)`
+
 **寫入** 一個值到資料結構中，然後立即重複 **寫入** 值到該目標結構中，則會得到剛 **寫入** 的值，也就是 b。
 
-**3. get after set**
-`set(lens, view(lens, store), store) ≡ store`
+**3. get after set** `set(lens, view(lens, store), store) ≡ store`
+
 當你 **讀取** 資料結構中的目標值，然後立即 **寫入** 值到該目標結構中，資料結構不變。
 
 ## Composition

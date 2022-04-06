@@ -1,0 +1,45 @@
+---
+title: Sample .md file
+date: '2016-03-08'
+tags: ['markdown', 'code', 'features']
+draft: true
+summary: Example of a markdown file with code blocks and syntax highlighting
+---
+
+A sample post with markdown.
+
+## Inline Highlighting
+
+Sample of inline highlighting `sum = parseInt(num1) + parseInt(num2)`
+
+## Code Blocks
+
+Some Javascript code
+
+<Sandpack>
+
+```js App.js
+const App = () => {
+  return <div className="cool">Hello World!!!</div>
+}
+
+export default App
+```
+
+```css
+.cool {
+  font-size: 20px;
+}
+```
+
+</Sandpack>
+
+Some Python code 🐍
+
+```jsx {2}
+const App = () => {
+  return <div className="cool">Hello World!!!</div>
+}
+
+export default App
+```
