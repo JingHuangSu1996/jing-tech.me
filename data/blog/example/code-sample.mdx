@@ -19,8 +19,16 @@ Some Javascript code
 <Sandpack>
 
 ```js App.js
+import { useState } from 'react'
+
 const App = () => {
-  return <div className="cool">Hello World!!!</div>
+  const [count, setCount] = useState(0)
+  return (
+    <>
+      <div className="cool">Hello World!!! {count}</div>
+      <button onClick={() => setCount((prev) => prev + 1)}>click to increase one</button>
+    </>
+  )
 }
 
 export default App
