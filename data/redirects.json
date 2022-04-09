@@ -34,6 +34,11 @@
       "source": "/transduce-2",
       "destination": "/blog/transduce-2/",
       "permanent": true
+    },
+    {
+      "source": "/react-prop-key",
+      "destination": "/blog/react-prop-key/",
+      "permanent": true
     }
   ]
 }

@@ -79,7 +79,7 @@ const CodeBlock = function CodeBlock({ children, className = 'language-js' }) {
           <pre className={className} style={style}>
             {tokens.map((line, i) => {
               if (i === tokens.length - 1) {
-                return
+                return null
               }
               return (
                 <div key={i} {...getLineProps({ line, key: i })}>
