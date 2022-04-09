@@ -58,7 +58,7 @@ export function CustomPreset({ isSingleFile, showDevTools, onDevToolsLoad, devTo
             {isExpandable && (
               <button
                 translate="yes"
-                className="dark:border-card-dark bg-wash dark:bg-card-dark border-b-1 relative top-0 z-10 order-2 flex w-full items-center justify-between rounded-t-none p-1 text-base xl:order-last"
+                className="bg-wash border-b-1 relative top-0 z-10 order-2 flex w-full items-center justify-between rounded-t-none p-1 text-base dark:border-card-dark dark:bg-card-dark xl:order-last"
                 onClick={() => {
                   const nextIsExpanded = !isExpanded
                   flushSync(() => {
@@ -79,7 +79,6 @@ export function CustomPreset({ isSingleFile, showDevTools, onDevToolsLoad, devTo
               </button>
             )}
           </div>
-
           {showDevTools && <SandpackReactDevTools onLoadModule={onDevToolsLoad} />}
         </SandpackThemeProvider>
       </div>

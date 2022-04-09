@@ -10,7 +10,7 @@ import SandpackRoot from './SandpackRoot'
 const SandpackGlimmer = ({ code }) => (
   <div className="sandpack-container my-8">
     <div className="dark:shadow-lg-dark rounded-lg shadow-lg">
-      <div className="bg-wash dark:bg-card-dark border-border dark:border-border-dark relative z-10 flex h-10 items-center justify-between rounded-t-lg rounded-b-none border-b">
+      <div className="bg-wash border-border dark:border-border-dark relative z-10 flex h-10 items-center justify-between rounded-t-lg rounded-b-none border-b dark:bg-card-dark">
         <div className="px-4 lg:px-6">
           <div className="sp-tabs"></div>
         </div>
@@ -37,7 +37,7 @@ const SandpackGlimmer = ({ code }) => (
             <div className="bg-card dark:bg-wash-dark relative h-full overflow-auto rounded-b-lg p-0 sm:p-2 md:p-4 lg:rounded-b-none lg:p-8"></div>
           </div>
           {code.split('\n').length > 16 && (
-            <div className="dark:border-card-dark bg-wash dark:bg-card-dark border-b-1 relative top-0 z-10 order-2 flex h-[42px] w-full items-center justify-between rounded-t-none p-1 text-base xl:order-last"></div>
+            <div className="bg-wash border-b-1 relative top-0 z-10 order-2 flex h-[42px] w-full items-center justify-between rounded-t-none p-1 text-base dark:border-card-dark dark:bg-card-dark xl:order-last"></div>
           )}
         </div>
       </div>

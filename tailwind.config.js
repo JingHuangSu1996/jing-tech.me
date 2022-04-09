@@ -32,6 +32,8 @@ module.exports = {
       colors: {
         primary: colors.teal,
         gray: colors.neutral,
+        // card: '#F6F7F9',
+        'card-dark': '#343A46',
       },
       fontSize: {
         code: 'calc(1em - 20%)',
