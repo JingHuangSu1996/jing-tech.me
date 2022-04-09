@@ -125,7 +125,7 @@ html.dark .sp-tabs .sp-tab-button[data-active='true'] {
   background: transparent !important;
 }
 .sp-pre-placeholder {
-  display: block !important;
+  display: hidden !important;
   margin-top: 0px !important;
   margin-bottom: 0px !important;
   padding: 18px var(--sp-space-3) !important;
