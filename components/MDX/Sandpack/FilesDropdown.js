@@ -29,7 +29,7 @@ export function FilesDropdown() {
           </span>
         )}
       </Listbox.Button>
-      <Listbox.Options className="bg-card dark:bg-card-dark border-1 border-border dark:border-border-dark absolute left-0 right-0 mx-0 mt-0.5 rounded-sm rounded-b-lg px-2 shadow-md">
+      <Listbox.Options className="bg-card border-1 border-border dark:border-border-dark absolute left-0 right-0 mx-0 mt-0.5 rounded-sm rounded-b-lg px-2 shadow-md dark:bg-card-dark">
         {openPaths.map((filePath) => (
           <Listbox.Option
             key={filePath}
