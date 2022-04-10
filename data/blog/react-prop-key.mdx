@@ -40,7 +40,7 @@ authors: ['default']
 
 <img src="/static/images/blog/react-key/color_change.png" alt="colors" />
 
-這下好了，如果你是 React 你要怎麼知道開發者是 **顏色改變** 還是 **位置互換** 呢？而這也是我們今天的主題，**為什麼 React 需要 key ?**
+如果你是 React 你要怎麼知道開發者是 **顏色改變** 還是 **位置互換** 呢？而這也是我們今天的主題，**為什麼 React 需要 key ?**
 
 ## 為什麼 React 需要 key ?
 
@@ -201,7 +201,7 @@ React.useEffect(() => {
 
 ### 加入狀態
 
-理解 React 的渲染機制後，現在我們在把有狀態時的情境加進來，假設這組色圈都本身都記錄了被點擊次數，而 React 會用 key 去記錄每個 Element 的狀態，在這個範例狀態就是點擊次數，**如果沒有提供 key 就會 fallback 使用 array 的 index 作為 key！**
+理解 React 的渲染機制後，現在我們在把有狀態時的情境加進來，假設這組色圈都本身都記錄了被點擊次數，而 React 會用 key 去辨識是否需要重新渲染該 Element 與保留該 Elment 正確的狀態，**如果沒有提供 key 就會 fallback 使用 array 的 index 作為 key！**
 
 <img src="/static/images/blog/react-key/div-3.png" alt="colors" />
 
